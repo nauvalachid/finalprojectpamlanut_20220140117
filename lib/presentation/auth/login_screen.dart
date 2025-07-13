@@ -1,6 +1,8 @@
 import 'package:finalproject/presentation/pasien/home/homescreen_pasien.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Tetap import ini jika ada widget lain yang menggunakannya secara langsung, tapi tidak lagi untuk menyimpan token di sini.
+import 'dart:developer'; // Import untuk log
 
 // Import untuk halaman setelah login
 import 'package:finalproject/presentation/admin/home/admin_home_screen.dart';
@@ -52,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           child: BlocConsumer<LoginBloc, LoginState>(
             // Listener untuk bereaksi terhadap perubahan state LoginBloc
-            listener: (context, state) {
+            listener: (context, state) { // Hapus 'async' karena tidak ada 'await' di sini lagi
               if (state is LoginSuccess) {
                 // Menampilkan SnackBar sukses
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -61,6 +63,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     backgroundColor: Colors.green,
                   ),
                 );
+
+                // --- LOGIKA PENYIMPANAN TOKEN DAN DATA PENGGUNA TELAH DIPINDAHKAN KE LOGINBLOC ---
+                // Anda tidak perlu lagi menyimpan token, user_name, dan user_role di sini.
+                // Logika ini sekarang ditangani oleh LoginBloc.
+                // log('LoginScreen: Token disimpan: ${state.token.substring(0, 10)}...'); // Hapus log ini juga
+                // log('LoginScreen: Nama pengguna disimpan: ${state.userName}');
+                // log('LoginScreen: Peran pengguna disimpan: ${state.userRole}');
+                // --- AKHIR LOGIKA PENYIMPANAN ---
 
                 // Navigasi kondisional berdasarkan peran pengguna
                 if (state.userRole == 'pasien') {

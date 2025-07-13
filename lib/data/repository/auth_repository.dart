@@ -31,8 +31,9 @@ class AuthRepository {
           log('AuthRepository: Objek "data" dari respons: ${jsonEncode(data)}'); // Log objek data
 
           if (data.containsKey('token') && data['token'] != null) {
-            await _secureStorage.write(key: "authToken", value: data['token']);
-            log('AuthRepository: Token berhasil disimpan ke SecureStorage: ${data['token'].substring(0, 10)}...');
+            final String receivedToken = data['token']; // Simpan token ke variabel lokal
+            await _secureStorage.write(key: "authToken", value: receivedToken);
+            log('AuthRepository: Token berhasil disimpan ke SecureStorage: ${receivedToken.substring(0, 10)}...');
 
             final String? userName = data['name'] as String?;
             final String? userRole = data['role'] as String?;
@@ -58,6 +59,7 @@ class AuthRepository {
             if (userName != null && userRole != null) {
               return {
                 'message': responseBody['message'] ?? 'Login berhasil',
+                'token': receivedToken, // <<< TAMBAHKAN KUNCI 'token' DI SINI
                 'user_role': userRole,
                 'user_name': userName,
                 'patient_id': patientId, // Kembalikan patient_id juga

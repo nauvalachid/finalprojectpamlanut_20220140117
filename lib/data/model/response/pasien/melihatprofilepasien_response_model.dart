@@ -2,7 +2,7 @@ import 'dart:convert';
 
 class MelihatProfilePasienResponseModel {
     final String? message;
-    final Data? data;
+    final DataPPasien? data;
 
     MelihatProfilePasienResponseModel({
         this.message,
@@ -15,7 +15,7 @@ class MelihatProfilePasienResponseModel {
 
     factory MelihatProfilePasienResponseModel.fromMap(Map<String, dynamic> json) => MelihatProfilePasienResponseModel(
         message: json["message"],
-        data: json["data"] == null ? null : Data.fromMap(json["data"]),
+        data: json["data"] == null ? null : DataPPasien.fromMap(json["data"]),
     );
 
     Map<String, dynamic> toMap() => {
@@ -24,7 +24,7 @@ class MelihatProfilePasienResponseModel {
     };
 }
 
-class Data {
+class DataPPasien {
     final int? id;
     final int? userId;
     final String? nama;
@@ -37,7 +37,7 @@ class Data {
     final DateTime? createdAt;
     final DateTime? updatedAt;
 
-    Data({
+    DataPPasien({
         this.id,
         this.userId,
         this.nama,
@@ -51,11 +51,11 @@ class Data {
         this.updatedAt,
     });
 
-    factory Data.fromJson(String str) => Data.fromMap(json.decode(str));
+    factory DataPPasien.fromJson(String str) => DataPPasien.fromMap(json.decode(str));
 
     String toJson() => json.encode(toMap());
 
-    factory Data.fromMap(Map<String, dynamic> json) => Data(
+    factory DataPPasien.fromMap(Map<String, dynamic> json) => DataPPasien(
         id: json["id"],
         userId: json["user_id"],
         nama: json["nama"],

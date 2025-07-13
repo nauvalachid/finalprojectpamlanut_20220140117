@@ -31,6 +31,7 @@ class DataPPasien {
     final String? alamat;
     final String? nomorTelepon;
     final String? latitude;
+    final String? longitude;
     final int? userId;
     final DateTime? updatedAt;
     final DateTime? createdAt;
@@ -43,6 +44,7 @@ class DataPPasien {
         this.alamat,
         this.nomorTelepon,
         this.latitude,
+        this.longitude,
         this.userId,
         this.updatedAt,
         this.createdAt,
@@ -60,6 +62,7 @@ class DataPPasien {
         alamat: json["alamat"],
         nomorTelepon: json["nomor_telepon"],
         latitude: json["latitude"],
+        longitude: json["longitude"],
         userId: json["user_id"],
         updatedAt: json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
         createdAt: json["created_at"] == null ? null : DateTime.parse(json["created_at"]),
@@ -73,6 +76,7 @@ class DataPPasien {
         "alamat": alamat,
         "nomor_telepon": nomorTelepon,
         "latitude": latitude,
+        "longitude": longitude,
         "user_id": userId,
         "updated_at": updatedAt?.toIso8601String(),
         "created_at": createdAt?.toIso8601String(),

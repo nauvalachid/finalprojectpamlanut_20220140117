@@ -4,13 +4,13 @@ import 'package:finalproject/data/repository/pasien_repository.dart';
 import 'package:finalproject/data/repository/pendaftaran_repository.dart';
 import 'package:finalproject/data/repository/jadwal_repository.dart';
 import 'package:finalproject/data/repository/resep_repository.dart';
+import 'package:finalproject/presentation/admin/bloc/jadwal/jadwal_bloc.dart';
 
 import 'package:finalproject/presentation/admin/bloc/profile/profile_admin_bloc.dart';
 import 'package:finalproject/presentation/admin/home/admin_home_screen.dart';
 import 'package:finalproject/presentation/admin/bloc/pendaftaran/pendaftaran_bloc.dart';
 import 'package:finalproject/presentation/auth/bloc/login/login_bloc.dart';
 import 'package:finalproject/presentation/admin/bloc/pasien/pasien_bloc.dart';
-import 'package:finalproject/presentation/admin/bloc/jadwal/jadwal_bloc.dart';
 import 'package:finalproject/presentation/admin/bloc/resep/resep_bloc.dart';
 
 import 'package:finalproject/presentation/auth/login_screen.dart';
@@ -31,15 +31,20 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // Metode ini sekarang langsung membaca token dari SharedPreferences
   Future<String?> _getInitialToken() async {
     final prefs = await SharedPreferences.getInstance();
-    final authRepository = AuthRepository(httpClient: ServiceHttpClient());
-    return authRepository.getToken();
+    final token = prefs.getString('auth_token');
+    log('Main: _getInitialToken - Token dari SharedPreferences: ${token != null ? token.substring(0, 10) + '...' : 'null'}');
+    return token;
   }
 
+  // Metode ini sekarang langsung membaca peran dari SharedPreferences
   Future<String?> _getUserRole() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_role');
+    final role = prefs.getString('user_role');
+    log('Main: _getUserRole - Peran dari SharedPreferences: $role');
+    return role;
   }
 
   @override
@@ -120,7 +125,7 @@ class MyApp extends StatelessWidget {
             visualDensity: VisualDensity.adaptivePlatformDensity,
           ),
           home: FutureBuilder<String?>(
-            future: _getInitialToken(),
+            future: _getInitialToken(), // Memuat token terlebih dahulu
             builder: (context, tokenSnapshot) {
               if (tokenSnapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
@@ -129,8 +134,9 @@ class MyApp extends StatelessWidget {
                   ),
                 );
               } else if (tokenSnapshot.hasData && tokenSnapshot.data != null) {
+                // Jika ada token, cek peran pengguna
                 return FutureBuilder<String?>(
-                  future: _getUserRole(),
+                  future: _getUserRole(), // Memuat peran pengguna
                   builder: (context, roleSnapshot) {
                     if (roleSnapshot.connectionState == ConnectionState.waiting) {
                       return const Scaffold(
@@ -149,6 +155,7 @@ class MyApp extends StatelessWidget {
                   },
                 );
               } else {
+                // Jika tidak ada token sama sekali
                 log('Main: Tidak ada token, mengarahkan ke LoginScreen.');
                 return const LoginScreen();
               }
