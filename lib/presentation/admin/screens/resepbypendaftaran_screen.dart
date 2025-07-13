@@ -5,6 +5,7 @@ import 'package:finalproject/presentation/admin/bloc/resep/resep_bloc.dart';
 import 'package:finalproject/presentation/admin/bloc/resep/resep_event.dart';
 import 'package:finalproject/presentation/admin/bloc/resep/resep_state.dart';
 import 'package:finalproject/presentation/admin/widget/resep/resep_card.dart'; // Import ResepCard yang baru
+import 'package:open_filex/open_filex.dart'; // <<<--- TAMBAHKAN INI UNTUK MEMBUKA FILE PDF
 
 class ResepByPendaftaranScreen extends StatefulWidget {
   final int pendaftaranId;
@@ -42,7 +43,32 @@ class _ResepByPendaftaranScreenState extends State<ResepByPendaftaranScreen> {
           ),
         ],
       ),
-      body: BlocBuilder<ResepBloc, ResepState>(
+      // <<<--- Ganti BlocBuilder menjadi BlocConsumer untuk mendengarkan state
+      body: BlocConsumer<ResepBloc, ResepState>(
+        listener: (context, state) {
+          // Listener untuk state terkait PDF
+          if (state is ResepPdfLoading) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Mengunduh resep PDF...')),
+            );
+          } else if (state is ResepPdfSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Resep PDF berhasil diunduh! Membuka file...')),
+            );
+            // Logika untuk membuka file PDF
+            OpenFilex.open(state.filePath);
+          } else if (state is ResepPdfError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Gagal mengunduh resep PDF: ${state.message}')),
+            );
+          }
+          // Listener untuk state error umum
+          else if (state is ResepError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: ${state.message}')),
+            );
+          }
+        },
         builder: (context, state) {
           if (state is ResepLoading) {
             print('BlocState: ResepLoading - Displaying CircularProgressIndicator');
@@ -72,6 +98,18 @@ class _ResepByPendaftaranScreenState extends State<ResepByPendaftaranScreen> {
                     // Jika EditResepScreen mengembalikan `true`, refresh data
                     if (result == true) {
                       _refreshResep();
+                    }
+                  },
+                  // <<<--- TAMBAHKAN onExportPdf callback
+                  onExportPdf: () {
+                    if (resep.id != null) {
+                      print('Memicu ExportResepPdf untuk resep ID: ${resep.id}');
+                      context.read<ResepBloc>().add(ExportResepPdf(resepId: resep.id!));
+                    } else {
+                      print('Resep ID null, tidak bisa export PDF.');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('ID resep tidak tersedia untuk export PDF.')),
+                      );
                     }
                   },
                 );

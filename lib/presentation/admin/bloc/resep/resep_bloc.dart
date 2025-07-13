@@ -3,7 +3,10 @@ import 'package:finalproject/data/model/request/admin/tambahresep_request.model.
 import 'package:finalproject/data/repository/resep_repository.dart';
 import 'package:finalproject/presentation/admin/bloc/resep/resep_event.dart';
 import 'package:finalproject/presentation/admin/bloc/resep/resep_state.dart';
-import 'dart:developer'; // Tambahkan ini untuk log
+import 'dart:developer'; // Untuk log
+import 'package:path_provider/path_provider.dart'; // <<<--- TAMBAH INI
+import 'dart:io'; // <<<--- TAMBAH INI
+import 'dart:typed_data'; // <<<--- TAMBAH INI (untuk Uint8List)
 
 class ResepBloc extends Bloc<ResepEvent, ResepState> {
   final ResepRepository _resepRepository;
@@ -15,7 +18,8 @@ class ResepBloc extends Bloc<ResepEvent, ResepState> {
     on<EditResep>(_onEditResep);
     on<LoadResepByPatientId>(_onLoadResepByPatientId);
     on<LoadResepByPendaftaranId>(_onLoadResepByPendaftaranId);
-    on<LoadResepForAuthenticatedPasien>(_onLoadResepForAuthenticatedPasien); // Handler BARU
+    on<LoadResepForAuthenticatedPasien>(_onLoadResepForAuthenticatedPasien);
+    on<ExportResepPdf>(_onExportResepPdf); // <<<--- Sudah ada, bagus!
   }
 
   Future<void> _onAddResep(AddResep event, Emitter<ResepState> emit) async {
@@ -83,7 +87,6 @@ class ResepBloc extends Bloc<ResepEvent, ResepState> {
     }
   }
 
-  // Handler BARU untuk LoadResepForAuthenticatedPasien
   Future<void> _onLoadResepForAuthenticatedPasien(
       LoadResepForAuthenticatedPasien event, Emitter<ResepState> emit) async {
     emit(ResepLoading());
@@ -117,6 +120,34 @@ class ResepBloc extends Bloc<ResepEvent, ResepState> {
     } catch (e) {
       log('ResepBloc: Gagal memuat resep berdasarkan ID pendaftaran: $e');
       emit(ResepError('Gagal memuat resep berdasarkan ID pendaftaran: $e'));
+    }
+  }
+
+  // <<<--- HANDLER UNTUK EXPORT PDF - KOREKSI DI SINI --->>>
+  Future<void> _onExportResepPdf(ExportResepPdf event, Emitter<ResepState> emit) async {
+    emit(ResepPdfLoading()); // Emit loading state
+    try {
+      log('ResepBloc: Memulai export PDF untuk resep ID: ${event.resepId}');
+      // Panggil repository untuk mendapatkan byte data PDF
+      final Uint8List pdfBytes = await _resepRepository.exportResepPdf(event.resepId); // <-- Asumsi ini mengembalikan Uint8List
+
+      if (pdfBytes.isNotEmpty) {
+        // Simpan file PDF secara lokal
+        final directory = await getApplicationDocumentsDirectory();
+        // Pastikan nama file unik atau relevan, contoh: resep_123.pdf
+        final String filePath = '${directory.path}/resep_${event.resepId}.pdf';
+        final File file = File(filePath);
+        await file.writeAsBytes(pdfBytes);
+
+        log('ResepBloc: PDF berhasil disimpan di: $filePath');
+        emit(ResepPdfSuccess(filePath: filePath)); // Emit success state dengan path file
+      } else {
+        log('ResepBloc: Data PDF kosong dari repository.');
+        emit(ResepPdfError(message: 'Data PDF kosong dari server.')); // Tambah named parameter
+      }
+    } catch (e) {
+      log('ResepBloc: Gagal export PDF: $e');
+      emit(ResepPdfError(message: 'Gagal mengekspor resep ke PDF: ${e.toString()}')); // Tambah named parameter
     }
   }
 }

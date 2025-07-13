@@ -54,3 +54,8 @@ class LoadResepByPendaftaranId extends ResepEvent {
 class LoadResepForAuthenticatedPasien extends ResepEvent {
   const LoadResepForAuthenticatedPasien();
 }
+
+class ExportResepPdf extends ResepEvent {
+  final int resepId;
+  const ExportResepPdf({required this.resepId});
+}

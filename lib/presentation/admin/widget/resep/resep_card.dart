@@ -4,19 +4,18 @@ import 'package:finalproject/data/model/response/pasien/melihatreseppasien_respo
 class ResepCard extends StatelessWidget {
   final Datum resep;
   final VoidCallback onEdit;
+  final VoidCallback onExportPdf; // <<<--- TAMBAH CALLBACK BARU
 
   const ResepCard({
     Key? key,
     required this.resep,
     required this.onEdit,
+    required this.onExportPdf, // <<<--- TAMBAH DI CONSTRUCTOR
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Log: Cetak nilai potoObat (sekarang berisi URL lengkap dari API)
     print('Resep Card: resep.potoObat (URL lengkap dari API): ${resep.potoObat ?? 'URL tidak tersedia'}');
-    // Log: Baris ini dihapus karena potoObatUrl tidak lagi ada di model
-    // print('Resep Card: resep.potoObatUrl (dari API): ${resep.potoObatUrl ?? 'URL tidak tersedia'}');
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -31,17 +30,15 @@ class ResepCard extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text('Keterangan Obat: ${resep.keteranganObat ?? 'N/A'}'),
-            // Cek apakah potoObat tidak null dan tidak kosong sebelum mencoba memuat gambar
-            if (resep.potoObat != null && resep.potoObat!.isNotEmpty) ...[ // <--- PERUBAHAN DI SINI: Gunakan resep.potoObat
+            if (resep.potoObat != null && resep.potoObat!.isNotEmpty) ...[
               const SizedBox(height: 8.0),
               Image.network(
-                resep.potoObat!, // <--- PERUBAHAN DI SINI: Gunakan resep.potoObat
+                resep.potoObat!,
                 height: 100,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  // Log: Cetak error jika Image.network gagal memuat
                   print('!!! Image Load Error for Resep ID ${resep.id}:');
-                  print('   URL attempted: ${resep.potoObat}'); // <--- PERUBAHAN DI SINI: Log resep.potoObat
+                  print('   URL attempted: ${resep.potoObat}');
                   print('   Error: $error');
                   if (stackTrace != null) {
                     print('   StackTrace: $stackTrace');
@@ -52,7 +49,6 @@ class ResepCard extends StatelessWidget {
                   if (loadingProgress == null) {
                     return child;
                   }
-                  // Opsional: Tampilkan progress loading
                   return Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
@@ -67,11 +63,26 @@ class ResepCard extends StatelessWidget {
               const SizedBox(height: 8.0),
               const Text('Tidak ada foto obat.'),
             ],
+            const SizedBox(height: 16.0), // Spasi sebelum tombol
             Align(
               alignment: Alignment.bottomRight,
-              child: ElevatedButton(
-                onPressed: onEdit,
-                child: const Text('Edit'),
+              child: Row( // <<<--- Gunakan Row untuk menempatkan tombol bersebelahan
+                mainAxisSize: MainAxisSize.min, // Agar Row tidak mengambil lebar penuh
+                children: [
+                  ElevatedButton(
+                    onPressed: onEdit,
+                    child: const Text('Edit'),
+                  ),
+                  const SizedBox(width: 8.0), // Spasi antara tombol
+                  ElevatedButton(
+                    onPressed: onExportPdf,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal, // Warna berbeda untuk tombol PDF
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Export PDF'),
+                  ),
+                ],
               ),
             ),
           ],
