@@ -2,15 +2,21 @@ import 'package:finalproject/data/repository/auth_repository.dart';
 import 'package:finalproject/presentation/auth/login_screen.dart'; 
 import 'package:finalproject/presentation/pasien/screen/melihatjadwal_screen.dart';
 import 'package:finalproject/presentation/pasien/screen/melihatresep_screen.dart';
+import 'package:finalproject/presentation/pasien/screen/pasienprofile_screen.dart';
 import 'package:finalproject/presentation/pasien/screen/tambahpendaftaran_screen.dart';
 import 'package:finalproject/presentation/pasien/widget/appheader_pasien.dart'; 
 import 'package:finalproject/presentation/pasien/widget/bottomnavbar_pasien.dart';
 import 'package:finalproject/presentation/pasien/widget/selamatdatangpasien.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:http/http.dart' as http; 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'dart:developer'; 
+
+
+import 'package:finalproject/data/repository/pasien_profile_repository.dart';
+import 'package:finalproject/presentation/pasien/bloc/profilepasien/profilepasien_bloc.dart';
 
 class PasienHomeScreen extends StatefulWidget {
   const PasienHomeScreen({super.key});
@@ -23,6 +29,7 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
   int _selectedIndex = 0;
   String _loggedInUserName = 'Memuat...'; 
   String _userRole = 'Memuat...'; 
+  String? _authToken; // Variabel untuk menyimpan token otentikasi
   int _currentPage = 0;
 
   final List<String> _sliderImages = [
@@ -30,27 +37,32 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
     'assets/images/banner2.png',
   ];
 
-  late final List<Widget> _screens;
+  late PageController _pageController; // Tambahkan PageController
+  late List<Widget> _screens; 
 
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // Memuat kedua nama dan peran
+    _pageController = PageController(initialPage: _selectedIndex); // Inisialisasi PageController
+    _loadUserData(); // Memuat nama, peran, dan token
+  }
 
-    _screens = [
-      _buildHomeContent(), 
-      const MelihatJadwalPasienScreen(),
-      const Center(child: Text('Halaman Pengaturan Pasien')), 
-    ];
+  @override
+  void dispose() {
+    _pageController.dispose(); // Pastikan PageController di-dispose
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final String? userName = prefs.getString('user_name');
     final String? userRole = prefs.getString('user_role');
+    // Pastikan kunci 'auth_token' ini konsisten dengan kunci yang digunakan saat menyimpan token setelah login.
+    final String? authToken = prefs.getString('auth_token'); // Memuat token otentikasi
 
     log('PasienHomeScreen: Nama dimuat dari SharedPreferences: $userName');
     log('PasienHomeScreen: Peran dimuat dari SharedPreferences: $userRole');
+    log('PasienHomeScreen: Token dimuat dari SharedPreferences: ${authToken != null ? authToken.substring(0, 10) + '...' : 'null'}'); // Log sebagian token
 
     setState(() {
       if (userName != null && userName.isNotEmpty) {
@@ -64,6 +76,33 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
       } else {
         _userRole = 'Tidak Diketahui'; 
       }
+
+      _authToken = authToken; // Simpan token
+
+      // Inisialisasi _screens setelah token dimuat
+      // Jika _authToken masih null, tampilkan indikator loading atau pesan error.
+      // Jika _authToken tidak null, baru inisialisasi PasienProfileScreen.
+      _screens = [
+        _buildHomeContent(), 
+        const MelihatJadwalPasienScreen(),
+        _authToken != null
+            ? BlocProvider(
+                create: (context) => PasienProfileBloc(
+                  pasienProfileRepository: PasienProfileRepositoryImpl(client: http.Client()),
+                ),
+                child: PasienProfileScreen(authToken: _authToken!), // Teruskan token
+              )
+            : const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Memuat profil atau token tidak ditemukan...'),
+                  ],
+                ),
+              ),
+      ];
     });
   }
 
@@ -71,6 +110,7 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+    _pageController.jumpToPage(index); // Pindah halaman di PageView
   }
 
   Widget _buildHomeContent() {
@@ -203,12 +243,22 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-    _screens[0] = _buildHomeContent();
+    // Pastikan _screens sudah diinisialisasi sebelum digunakan
+    // Jika _authToken masih null, tampilkan indikator loading.
+    // Ini penting karena _screens baru diinisialisasi setelah _authToken dimuat.
+    if (_authToken == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: _selectedIndex == 0 ? null : AppBar(
-        title: const Text('Janji Temu'), 
+        title: _selectedIndex == 1
+            ? const Text('Janji Temu')
+            : _selectedIndex == 2
+                ? const Text('Profil Pasien') // Judul untuk halaman profil
+                : const Text(''), // Default atau judul lain
       ),
 
       drawer: Drawer(
@@ -248,7 +298,16 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
           ],
         ),
       ),
-      body: _screens[_selectedIndex],
+      body: PageView( // Menggunakan PageView untuk menampung halaman
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(), // Nonaktifkan geser manual
+        onPageChanged: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        children: _screens, // Daftar halaman yang akan ditampilkan
+      ),
       bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -261,8 +320,10 @@ class _PasienHomeScreenState extends State<PasienHomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('user_name');
     await prefs.remove('user_role');
+    await prefs.remove('auth_token'); // Hapus juga token saat logout
 
     try {
+      // Pastikan AuthRepository disediakan di atas widget tree
       final authRepo = RepositoryProvider.of<AuthRepository>(context);
       await authRepo.logout();
       log('User logged out successfully and data cleared.');
