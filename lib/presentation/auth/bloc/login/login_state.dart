@@ -1,4 +1,3 @@
-// login_state.dart
 // import 'package:equatable/equatable.dart'; // Hapus ini jika tidak digunakan
 
 abstract class LoginState {
@@ -19,8 +18,14 @@ class LoginSuccess extends LoginState {
   final String message;
   final String userRole;
   final String userName;
+  final String token; // <<< PROPERTI TOKEN DITAMBAHKAN KEMBALI
 
-  const LoginSuccess({required this.message, required this.userRole, required this.userName});
+  const LoginSuccess({
+    required this.message,
+    required this.userRole,
+    required this.userName,
+    required this.token, // <<< DIWAJIBKAN DI KONSTRUKTOR
+  });
 
   // Jika Anda ingin perbandingan yang lebih ketat tanpa Equatable:
   // @override
@@ -30,10 +35,11 @@ class LoginSuccess extends LoginState {
   //         runtimeType == other.runtimeType &&
   //         message == other.message &&
   //         userRole == other.userRole &&
-  //         userName == other.userName;
+  //         userName == other.userName &&
+  //         token == other.token; // Jangan lupa bandingkan token juga
 
   // @override
-  // int get hashCode => message.hashCode ^ userRole.hashCode ^ userName.hashCode;
+  // int get hashCode => message.hashCode ^ userRole.hashCode ^ userName.hashCode ^ token.hashCode;
 }
 
 class LoginFailure extends LoginState {
@@ -53,4 +59,4 @@ class LoginFailure extends LoginState {
   // int get hashCode => errorMessage.hashCode;
 }
 
-class LogoutSuccess extends LoginState {}
+class LogoutSuccess extends LoginState {} // <<< TAMBAHAN STATE LOGOUT

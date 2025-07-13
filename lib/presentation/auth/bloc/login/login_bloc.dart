@@ -1,10 +1,9 @@
-// login_bloc.dart
 import 'package:finalproject/data/repository/auth_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'login_event.dart';
 import 'login_state.dart';
 import 'dart:developer';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final AuthRepository authRepository;
@@ -22,24 +21,29 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           await authRepository.login(event.email, event.password);
       log('LoginBloc: Result from AuthRepository (after parsing): $result');
 
+      final String? token = result['token'] as String?; // <<< AMBIL TOKEN DARI HASIL
       final String? userName = result['user_name'] as String?;
       final String? userRole = result['user_role'] as String?;
       final String message = result['message'] as String? ?? 'Login berhasil';
 
-      if (userName != null && userRole != null) {
+      if (token != null && userName != null && userRole != null) {
+        // --- SIMPAN TOKEN DAN DATA PENGGUNA KE SHARED PREFERENCES DI SINI ---
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_name', userName);
-        await prefs.setString('user_role', userRole);
-        log('LoginBloc: Nama ($userName) dan Peran ($userRole) berhasil disimpan ke SharedPreferences.');
+        await prefs.setString('auth_token', token); // Simpan token
+        await prefs.setString('user_name', userName); // Simpan nama pengguna
+        await prefs.setString('user_role', userRole); // Simpan peran pengguna
+        log('LoginBloc: Token (${token.substring(0, 10)}...), Nama ($userName) dan Peran ($userRole) berhasil disimpan ke SharedPreferences.');
+        // --- AKHIR SIMPAN DATA ---
 
         emit(LoginSuccess(
             message: message,
             userRole: userRole.toLowerCase(),
-            userName: userName));
+            userName: userName,
+            token: token)); // <<< TERUSKAN TOKEN KE STATE
       } else {
-        log('LoginBloc: Nama atau peran pengguna tidak ditemukan dalam hasil login yang diproses. Hasil lengkap: $result');
+        log('LoginBloc: Token, nama, atau peran pengguna tidak ditemukan dalam hasil login yang diproses. Hasil lengkap: $result');
         emit(LoginFailure(
-            errorMessage: 'Login successful, but user name or role not found.'));
+            errorMessage: 'Login successful, but token, user name or role not found.'));
       }
     } catch (e) {
       log('LoginBloc: Login error: $e');
