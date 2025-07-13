@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:developer'; // Import untuk log
 
 class ServiceHttpClient {
+  // PASTIKAN BASE URL INI BENAR SESUAI API BACKEND ANDA
+  // Ini harus mengarah ke base URL API Anda, biasanya diakhiri dengan '/api/'
   final String baseUrl = 'http://10.0.2.2:8000/api/'; // URL API backend
   final FlutterSecureStorage secureStorage = const FlutterSecureStorage(); // Gunakan const
 
@@ -110,7 +112,7 @@ class ServiceHttpClient {
   }
 
   // *******************************************************************
-  // METODE BARU UNTUK MENGIRIM MULTIPART REQUEST (UNTUK UPLOAD FILE)
+  // METODE UNTUK MENGIRIM MULTIPART REQUEST (UNTUK UPLOAD FILE)
   // *******************************************************************
   Future<http.Response> sendMultipartRequest(http.MultipartRequest request) async {
     log('ServiceHttpClient: Multipart request ke: ${request.url}');
